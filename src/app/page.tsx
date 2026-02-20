@@ -1,86 +1,76 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
-/* ── Question Flow ── */
+/* ── Question definitions ── */
 interface Question {
   id: string;
   text: string;
   subtext?: string;
-  type: 'text' | 'select' | 'multi-select' | 'number' | 'textarea';
+  type: 'text' | 'select' | 'multi-select' | 'textarea';
   options?: string[];
   placeholder?: string;
-  suggestions?: string[];
+  chips?: string[];
 }
 
 const QUESTIONS: Question[] = [
   {
     id: 'business_name',
     text: "What's your business called?",
-    subtext: "Let's start simple.",
     type: 'text',
-    placeholder: "e.g. Summit Electric, Brightline Marketing",
+    placeholder: 'Business name',
   },
   {
     id: 'industry',
     text: 'What industry are you in?',
     type: 'select',
     options: [
-      'Construction / Trades',
-      'Marketing / Agency',
-      'E-commerce / Retail',
+      'Construction & Trades',
+      'Marketing & Agency',
+      'E-commerce & Retail',
       'Professional Services',
       'Healthcare',
       'Real Estate',
-      'Technology / SaaS',
+      'Technology & SaaS',
       'Manufacturing',
       'Food & Beverage',
       'Education',
-      'Finance / Accounting',
-      'Logistics / Transportation',
+      'Finance & Accounting',
+      'Logistics & Transportation',
       'Other',
     ],
   },
   {
     id: 'employee_count',
     text: 'How many people work in your business?',
-    subtext: "Include yourself, full-time, part-time, and contractors.",
+    subtext: 'Full-time, part-time, and contractors.',
     type: 'select',
     options: ['Just me', '2–5', '6–15', '16–50', '51–200', '200+'],
   },
   {
     id: 'revenue_range',
-    text: "What's your approximate annual revenue?",
-    subtext: "This helps us calculate your potential ROI. It stays private.",
+    text: 'Approximate annual revenue?',
+    subtext: 'Helps us calculate your ROI. Stays completely private.',
     type: 'select',
-    options: [
-      'Under $100K',
-      '$100K – $500K',
-      '$500K – $1M',
-      '$1M – $5M',
-      '$5M – $20M',
-      '$20M+',
-      'Prefer not to say',
-    ],
+    options: ['Under $100K', '$100K–$500K', '$500K–$1M', '$1M–$5M', '$5M–$20M', '$20M+', 'Prefer not to say'],
   },
   {
     id: 'roles',
     text: 'What roles exist in your business?',
-    subtext: "Select all that apply. We'll analyze each one.",
+    subtext: 'Select all that apply.',
     type: 'multi-select',
     options: [
       'Admin / Office Manager',
       'Bookkeeper / Accountant',
-      'Sales / Business Development',
-      'Customer Service / Support',
+      'Sales / BD',
+      'Customer Service',
       'Marketing / Social Media',
       'Project Manager',
-      'Operations Manager',
+      'Operations',
       'HR / Recruiting',
-      'Data Entry / Filing',
+      'Data Entry',
       'Scheduling / Dispatch',
-      'Content Writer / Copywriter',
+      'Content / Copywriter',
       'Designer',
       'IT / Tech Support',
       'Warehouse / Inventory',
@@ -89,424 +79,373 @@ const QUESTIONS: Question[] = [
   },
   {
     id: 'biggest_bottleneck',
-    text: 'What feels like the biggest bottleneck in your business right now?',
-    subtext: "Be specific. The more detail, the better your report.",
+    text: "What's the biggest bottleneck in your business?",
+    subtext: 'The more specific, the better your report.',
     type: 'textarea',
-    placeholder: "e.g. I spend 3 hours a day on email. Scheduling is chaos. We lose leads because nobody follows up fast enough.",
-    suggestions: [
-      "Too much time on admin work",
+    placeholder: 'Describe what slows you down the most...',
+    chips: [
+      'Too much admin work',
+      'Slow customer response time',
       "Can't hire fast enough",
-      "Customer response time is too slow",
-      "Data entry is eating us alive",
-      "Marketing is inconsistent",
+      'Leads fall through cracks',
+      'Manual data entry',
+      'Inconsistent marketing',
     ],
   },
   {
     id: 'repetitive_tasks',
     text: 'What tasks feel repetitive or mindless?',
-    subtext: "These are usually the first things AI can take over.",
+    subtext: 'These are the first things AI takes over.',
     type: 'textarea',
-    placeholder: "e.g. Invoicing, data entry, scheduling meetings, writing proposals, sorting emails, social media posting",
-    suggestions: [
-      "Invoicing and billing",
-      "Scheduling and calendar management",
-      "Email sorting and responses",
-      "Report generation",
-      "Social media management",
-      "Lead follow-up",
+    placeholder: 'List the tasks you wish you could automate...',
+    chips: [
+      'Invoicing & billing',
+      'Scheduling meetings',
+      'Email sorting & replies',
+      'Report generation',
+      'Social media posting',
+      'Lead follow-up',
+      'Proposal writing',
     ],
   },
   {
     id: 'monthly_payroll',
-    text: "What's your approximate monthly payroll spend?",
-    subtext: "This is the foundation of your ROI calculation.",
+    text: 'Approximate monthly payroll?',
+    subtext: 'Foundation of your savings calculation.',
     type: 'select',
-    options: [
-      'Under $10K',
-      '$10K – $25K',
-      '$25K – $50K',
-      '$50K – $100K',
-      '$100K – $250K',
-      '$250K+',
-      "I don't know",
-    ],
+    options: ['Under $10K', '$10K–$25K', '$25K–$50K', '$50K–$100K', '$100K–$250K', '$250K+', "Don't know"],
   },
   {
     id: 'tech_comfort',
-    text: 'How comfortable is your team with technology?',
+    text: "How tech-savvy is your team?",
     type: 'select',
     options: [
       'We still use paper for some things',
-      'Basic — email, spreadsheets, maybe some apps',
-      'Moderate — we use several SaaS tools',
-      'Advanced — we automate some workflows already',
-      'Very advanced — we have developers on staff',
+      'Basic — email and spreadsheets',
+      'Moderate — several SaaS tools',
+      'Advanced — some automations already',
+      'Very advanced — developers on staff',
     ],
   },
   {
     id: 'ai_experience',
-    text: 'Have you tried using AI tools in your business before?',
+    text: 'Have you used AI tools before?',
     type: 'select',
     options: [
       "No — don't know where to start",
-      'Played with ChatGPT a bit',
-      "Tried a few tools but couldn't make them stick",
-      'Using some AI tools regularly',
-      'We have AI deeply integrated already',
+      'Played with ChatGPT',
+      "Tried tools but couldn't stick",
+      'Using some AI regularly',
+      'AI is deeply integrated',
     ],
   },
   {
-    id: 'time_waste',
-    text: 'If you could get 10 hours back per week, what would you spend them on?',
-    subtext: "This tells us what matters most to you.",
+    id: 'time_back',
+    text: 'If you got 10 hours back per week, what would you do?',
     type: 'textarea',
-    placeholder: "e.g. Growing the business, spending time with family, actually doing the work I love instead of admin",
-    suggestions: [
-      "Growing revenue and sales",
-      "Strategic planning",
-      "Spending time with family",
-      "Doing the work I actually enjoy",
-      "Taking a real vacation",
+    placeholder: 'What matters most to you...',
+    chips: [
+      'Grow revenue',
+      'Strategic planning',
+      'Time with family',
+      'Work I actually enjoy',
+      'Take a real vacation',
     ],
   },
   {
-    id: 'tools_currently',
-    text: 'What software/tools do you currently use?',
-    subtext: "List anything — we'll find AI alternatives and integrations.",
+    id: 'current_tools',
+    text: 'What tools do you currently use?',
+    subtext: "We'll find AI alternatives and integrations.",
     type: 'textarea',
-    placeholder: "e.g. QuickBooks, Google Workspace, Slack, Salesforce, Excel, Monday.com",
-    suggestions: [
-      "QuickBooks / Xero",
-      "Google Workspace / Microsoft 365",
-      "Slack / Teams",
-      "Salesforce / HubSpot",
-      "Spreadsheets for everything",
+    placeholder: 'List your current software...',
+    chips: [
+      'QuickBooks / Xero',
+      'Google Workspace',
+      'Microsoft 365',
+      'Slack / Teams',
+      'Salesforce / HubSpot',
+      'Spreadsheets for everything',
     ],
   },
   {
     id: 'budget',
-    text: "What's your monthly budget for software and tools?",
+    text: 'Monthly software budget?',
     type: 'select',
-    options: [
-      'Under $500/month',
-      '$500 – $2,000/month',
-      '$2,000 – $5,000/month',
-      '$5,000 – $10,000/month',
-      '$10,000+/month',
-      'Whatever delivers ROI',
-    ],
+    options: ['Under $500', '$500–$2K', '$2K–$5K', '$5K–$10K', '$10K+', 'Whatever delivers ROI'],
   },
   {
     id: 'timeline',
-    text: 'How quickly do you want to implement changes?',
+    text: 'How fast do you want to move?',
     type: 'select',
-    options: [
-      'Yesterday',
-      'Within 30 days',
-      'Within 90 days',
-      "I'm just exploring for now",
-    ],
+    options: ['Yesterday', 'Within 30 days', 'Within 90 days', 'Just exploring'],
   },
   {
     id: 'email',
-    text: "Last one. Where should we send your report?",
-    subtext: "Your custom AI implementation report will be ready in minutes.",
+    text: 'Where should we send your report?',
+    subtext: 'Your custom AI implementation report will be ready in minutes.',
     type: 'text',
     placeholder: 'your@email.com',
   },
 ];
 
-/* ── Components ── */
-
-function TypingIndicator() {
-  return (
-    <div className="flex items-center gap-1.5 px-4 py-3">
-      <div className="w-1.5 h-1.5 bg-white/40 rounded-full typing-dot" />
-      <div className="w-1.5 h-1.5 bg-white/40 rounded-full typing-dot" />
-      <div className="w-1.5 h-1.5 bg-white/40 rounded-full typing-dot" />
-    </div>
-  );
-}
-
-function MessageBubble({ type, children }: { type: 'system' | 'user'; children: React.ReactNode }) {
-  return (
-    <div className={`animate-fade-in ${type === 'user' ? 'flex justify-end' : ''}`}>
-      <div className={`max-w-[480px] ${
-        type === 'system'
-          ? 'text-white/90'
-          : 'bg-white/[0.06] border border-white/[0.08] rounded-2xl px-5 py-3 text-white/80'
-      }`}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
+/* ── Main Page ── */
 export default function Home() {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
-  const [messages, setMessages] = useState<{ type: 'system' | 'user'; content: React.ReactNode }[]>([]);
-  const [showInput, setShowInput] = useState(false);
-  const [inputValue, setInputValue] = useState('');
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
   const [started, setStarted] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [inputValue, setInputValue] = useState('');
+  const [selectedMulti, setSelectedMulti] = useState<string[]>([]);
+  const [complete, setComplete] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping, showInput]);
+  const q = QUESTIONS[step];
+  const total = QUESTIONS.length;
+  const progress = ((step) / total) * 100;
 
   useEffect(() => {
-    if (showInput && inputRef.current) {
-      inputRef.current.focus();
+    if (started && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [showInput, currentStep]);
+  }, [step, started]);
 
-  const addSystemMessage = (content: React.ReactNode) => {
-    return new Promise<void>((resolve) => {
-      setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-        setMessages((prev) => [...prev, { type: 'system', content }]);
-        resolve();
-      }, 600 + Math.random() * 400);
-    });
-  };
-
-  const showQuestion = async (index: number) => {
-    const q = QUESTIONS[index];
-    await addSystemMessage(
-      <div>
-        <p className="text-[15px] font-medium leading-relaxed">{q.text}</p>
-        {q.subtext && <p className="text-[13px] text-white/40 mt-1.5">{q.subtext}</p>}
-      </div>
-    );
-    setShowInput(true);
-  };
-
-  const handleStart = async () => {
-    setStarted(true);
-    await addSystemMessage(
-      <div>
-        <p className="text-[15px] font-medium leading-relaxed">
-          I'm going to ask you about your business — how it runs, where time gets wasted, what roles you have, and what's costing you the most.
-        </p>
-        <p className="text-[13px] text-white/40 mt-2">Takes about 5 minutes. Your answers stay private.</p>
-      </div>
-    );
-    await showQuestion(0);
-  };
-
-  const handleAnswer = async (value: string | string[]) => {
-    const q = QUESTIONS[currentStep];
-    const displayValue = Array.isArray(value) ? value.join(', ') : value;
-
+  const next = useCallback((value: string | string[]) => {
     setAnswers((prev) => ({ ...prev, [q.id]: value }));
-    setMessages((prev) => [...prev, { type: 'user', content: <p className="text-[15px]">{displayValue}</p> }]);
-    setShowInput(false);
     setInputValue('');
-    setSelectedOptions([]);
-
-    const nextStep = currentStep + 1;
-    if (nextStep >= QUESTIONS.length) {
-      setIsComplete(true);
-      await addSystemMessage(
-        <div>
-          <p className="text-[15px] font-medium leading-relaxed">Generating your custom AI implementation report...</p>
-          <p className="text-[13px] text-white/40 mt-1.5">This typically takes 2-3 minutes. We're analyzing your specific business against our database of 500+ AI tools and implementation patterns.</p>
-        </div>
-      );
-      // TODO: Generate report
-      return;
-    }
-
-    setCurrentStep(nextStep);
-    await showQuestion(nextStep);
-  };
-
-  const handleSubmit = () => {
-    const q = QUESTIONS[currentStep];
-    if (q.type === 'multi-select') {
-      if (selectedOptions.length > 0) handleAnswer(selectedOptions);
+    setSelectedMulti([]);
+    if (step + 1 >= total) {
+      setComplete(true);
     } else {
-      if (inputValue.trim()) handleAnswer(inputValue.trim());
+      setStep((s) => s + 1);
     }
-  };
+  }, [q, step, total]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit();
+      if (inputValue.trim()) next(inputValue.trim());
     }
   };
 
-  const currentQuestion = QUESTIONS[currentStep];
+  const addChip = (chip: string) => {
+    setInputValue((prev) => {
+      if (prev.includes(chip)) return prev;
+      return prev ? `${prev}, ${chip}` : chip;
+    });
+  };
 
+  /* ── Landing ── */
+  if (!started) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6">
+        <div className="max-w-lg text-center animate-in">
+          <div className="inline-flex items-center gap-2 mb-10">
+            <div className="w-8 h-8 bg-[#0d0d0d] rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm font-bold">A</span>
+            </div>
+            <span className="text-[15px] font-semibold tracking-tight text-[#0d0d0d]">axiom</span>
+          </div>
+
+          <h1 className="text-[clamp(32px,5vw,56px)] font-semibold leading-[1.08] tracking-[-0.03em] text-[#0d0d0d] mb-5">
+            Discover what AI<br />can do for your business
+          </h1>
+
+          <p className="text-[17px] leading-[1.6] text-[#666] max-w-md mx-auto mb-10">
+            Answer a few questions. Get a custom report showing exactly which roles AI can handle, how much you&apos;ll save, and how to implement it — step by step.
+          </p>
+
+          <button
+            onClick={() => setStarted(true)}
+            className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-[#0d0d0d] text-white rounded-full text-[15px] font-medium hover:bg-[#333] transition-colors"
+          >
+            Start your analysis
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+
+          <p className="text-[13px] text-[#bbb] mt-5">Free · 5 minutes · No credit card</p>
+        </div>
+
+        <footer className="absolute bottom-6 text-[11px] text-[#ccc]">
+          axiom · ai implementation intelligence
+        </footer>
+      </div>
+    );
+  }
+
+  /* ── Complete ── */
+  if (complete) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6">
+        <div className="max-w-md text-center animate-in">
+          <div className="w-14 h-14 bg-[#0d0d0d] rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          <h2 className="text-[28px] font-semibold tracking-tight text-[#0d0d0d] mb-3">
+            Your report is being generated
+          </h2>
+          <p className="text-[16px] text-[#666] leading-relaxed mb-6">
+            We&apos;re analyzing your business against 500+ AI tools and implementation patterns. Your custom report will be delivered to <strong className="text-[#0d0d0d]">{answers.email as string}</strong> within minutes.
+          </p>
+          <div className="h-1 bg-[#f0f0f0] rounded-full overflow-hidden max-w-xs mx-auto">
+            <div className="h-full bg-[#0d0d0d] rounded-full" style={{ width: '100%', animation: 'shimmer 2s linear infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(90deg, #0d0d0d 25%, #333 50%, #0d0d0d 75%)' }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Question Flow ── */
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-10 h-14 border-b border-white/[0.06] bg-black/80 backdrop-blur-xl">
-        <span className="text-[15px] font-semibold tracking-tight">axiom</span>
-        <div className="flex items-center gap-4">
-          <span className="text-[13px] text-white/30 hidden sm:block">AI Implementation Intelligence</span>
-        </div>
-      </nav>
+      {/* Progress bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-[2px] bg-[#f0f0f0]">
+        <div
+          className="h-full bg-[#0d0d0d] transition-all duration-500 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
 
-      {/* Main */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 pt-14">
-        {!started ? (
-          /* Landing */
-          <div className="flex flex-col items-center text-center max-w-xl animate-fade-in">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center mb-8">
-              <span className="text-black text-lg font-bold">A</span>
-            </div>
-            <h1 className="text-[clamp(28px,5vw,48px)] font-semibold tracking-tight leading-[1.1] mb-4">
-              Discover what AI<br />can do for your business.
-            </h1>
-            <p className="text-[15px] text-white/40 leading-relaxed max-w-md mb-10">
-              Answer a few questions about how your business runs. Get a custom report showing exactly which roles AI can handle, how much you'll save, and step-by-step implementation instructions.
-            </p>
-            <button
-              onClick={handleStart}
-              className="group flex items-center gap-2 px-8 py-3.5 bg-white text-black rounded-full text-[15px] font-medium hover:bg-white/90 transition-all"
-            >
-              Start your analysis
-              <ArrowUp className="w-4 h-4 rotate-45 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </button>
-            <p className="text-[12px] text-white/20 mt-4">Free · 5 minutes · No credit card</p>
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-6 md:px-10 h-14 bg-white/80 backdrop-blur-xl">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-[#0d0d0d] rounded-md flex items-center justify-center">
+            <span className="text-white text-[10px] font-bold">A</span>
           </div>
-        ) : (
-          /* Chat */
-          <div className="w-full max-w-2xl flex-1 flex flex-col py-8">
-            <div className="flex-1 space-y-6 pb-32">
-              {messages.map((msg, i) => (
-                <MessageBubble key={i} type={msg.type}>
-                  {msg.content}
-                </MessageBubble>
+          <span className="text-[13px] font-semibold tracking-tight text-[#0d0d0d]">axiom</span>
+        </div>
+        <span className="text-[13px] text-[#bbb] tabular-nums">{step + 1} of {total}</span>
+      </header>
+
+      {/* Question */}
+      <main className="flex-1 flex items-center justify-center px-6 pt-14 pb-20">
+        <div className="w-full max-w-xl animate-in" key={step}>
+          {/* Question text */}
+          <h2 className="text-[clamp(22px,3.5vw,32px)] font-semibold leading-[1.2] tracking-[-0.02em] text-[#0d0d0d] mb-2">
+            {q.text}
+          </h2>
+          {q.subtext && (
+            <p className="text-[15px] text-[#999] mb-8">{q.subtext}</p>
+          )}
+          {!q.subtext && <div className="mb-8" />}
+
+          {/* Select options */}
+          {q.type === 'select' && q.options && (
+            <div className="flex flex-col gap-2">
+              {q.options.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => next(opt)}
+                  className="w-full text-left px-5 py-4 border border-[#ebebeb] rounded-xl text-[15px] text-[#333] hover:border-[#0d0d0d] hover:text-[#0d0d0d] hover:bg-[#fafafa] transition-all active:scale-[0.99]"
+                >
+                  {opt}
+                </button>
               ))}
-              {isTyping && <TypingIndicator />}
+            </div>
+          )}
 
-              {/* Input Area */}
-              {showInput && !isComplete && (
-                <div className="animate-fade-in space-y-3">
-                  {currentQuestion.type === 'select' && currentQuestion.options && (
-                    <div className="flex flex-wrap gap-2">
-                      {currentQuestion.options.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => handleAnswer(opt)}
-                          className="px-4 py-2.5 text-[14px] border border-white/[0.1] rounded-xl text-white/70 hover:text-white hover:bg-white/[0.06] hover:border-white/[0.2] transition-all"
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+          {/* Multi-select */}
+          {q.type === 'multi-select' && q.options && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {q.options.map((opt) => {
+                  const isSelected = selectedMulti.includes(opt);
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => setSelectedMulti((prev) => isSelected ? prev.filter((o) => o !== opt) : [...prev, opt])}
+                      className={`px-4 py-2.5 rounded-xl text-[14px] border transition-all ${
+                        isSelected
+                          ? 'border-[#0d0d0d] bg-[#0d0d0d] text-white'
+                          : 'border-[#ebebeb] text-[#555] hover:border-[#999] hover:text-[#0d0d0d]'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedMulti.length > 0 && (
+                <button
+                  onClick={() => next(selectedMulti)}
+                  className="px-6 py-3 bg-[#0d0d0d] text-white rounded-xl text-[15px] font-medium hover:bg-[#333] transition-colors"
+                >
+                  Continue with {selectedMulti.length} selected
+                </button>
+              )}
+            </div>
+          )}
 
-                  {currentQuestion.type === 'multi-select' && currentQuestion.options && (
-                    <>
-                      <div className="flex flex-wrap gap-2">
-                        {currentQuestion.options.map((opt) => (
-                          <button
-                            key={opt}
-                            onClick={() => {
-                              setSelectedOptions((prev) =>
-                                prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]
-                              );
-                            }}
-                            className={`px-4 py-2.5 text-[14px] border rounded-xl transition-all ${
-                              selectedOptions.includes(opt)
-                                ? 'border-white/40 bg-white/[0.08] text-white'
-                                : 'border-white/[0.1] text-white/50 hover:text-white/70 hover:border-white/[0.2]'
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                      {selectedOptions.length > 0 && (
-                        <button
-                          onClick={handleSubmit}
-                          className="px-6 py-2.5 bg-white text-black rounded-xl text-[14px] font-medium hover:bg-white/90 transition-all"
-                        >
-                          Continue with {selectedOptions.length} selected →
-                        </button>
-                      )}
-                    </>
-                  )}
+          {/* Text input */}
+          {q.type === 'text' && (
+            <div className="relative">
+              <input
+                ref={inputRef as React.RefObject<HTMLInputElement>}
+                type={q.id === 'email' ? 'email' : 'text'}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={q.placeholder}
+                autoComplete={q.id === 'email' ? 'email' : 'off'}
+                className="w-full border-b-2 border-[#ebebeb] focus:border-[#0d0d0d] bg-transparent py-4 text-[20px] text-[#0d0d0d] placeholder-[#ccc] outline-none transition-colors"
+              />
+              {inputValue.trim() && (
+                <button
+                  onClick={() => next(inputValue.trim())}
+                  className="absolute right-0 bottom-4 px-5 py-2 bg-[#0d0d0d] text-white rounded-lg text-[14px] font-medium hover:bg-[#333] transition-colors"
+                >
+                  {q.id === 'email' ? 'Get my report' : 'Continue'}
+                </button>
+              )}
+            </div>
+          )}
 
-                  {(currentQuestion.type === 'text' || currentQuestion.type === 'number') && (
-                    <div className="relative">
-                      <input
-                        ref={inputRef as React.RefObject<HTMLInputElement>}
-                        type={currentQuestion.type === 'number' ? 'number' : 'text'}
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={currentQuestion.placeholder || 'Type your answer...'}
-                        className="w-full bg-white/[0.04] border border-white/[0.1] rounded-2xl px-5 py-4 pr-14 text-[15px] text-white placeholder-white/20 outline-none focus:border-white/[0.25] transition-colors"
-                      />
-                      <button
-                        onClick={handleSubmit}
-                        disabled={!inputValue.trim()}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-white flex items-center justify-center disabled:opacity-20 transition-opacity"
-                      >
-                        <ArrowUp className="w-4 h-4 text-black" />
-                      </button>
-                    </div>
-                  )}
-
-                  {currentQuestion.type === 'textarea' && (
-                    <div className="space-y-3">
-                      {currentQuestion.suggestions && (
-                        <div className="flex flex-wrap gap-2">
-                          {currentQuestion.suggestions.map((s) => (
-                            <button
-                              key={s}
-                              onClick={() => setInputValue((prev) => prev ? `${prev}, ${s}` : s)}
-                              className="px-3 py-1.5 text-[12px] border border-white/[0.08] rounded-lg text-white/40 hover:text-white/60 hover:border-white/[0.15] transition-all"
-                            >
-                              + {s}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      <div className="relative">
-                        <textarea
-                          ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-                          value={inputValue}
-                          onChange={(e) => setInputValue(e.target.value)}
-                          onKeyDown={handleKeyDown}
-                          placeholder={currentQuestion.placeholder || 'Type your answer...'}
-                          rows={3}
-                          className="w-full bg-white/[0.04] border border-white/[0.1] rounded-2xl px-5 py-4 pr-14 text-[15px] text-white placeholder-white/20 outline-none focus:border-white/[0.25] transition-colors resize-none"
-                        />
-                        <button
-                          onClick={handleSubmit}
-                          disabled={!inputValue.trim()}
-                          className="absolute right-3 bottom-3 w-8 h-8 rounded-lg bg-white flex items-center justify-center disabled:opacity-20 transition-opacity"
-                        >
-                          <ArrowUp className="w-4 h-4 text-black" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
+          {/* Textarea */}
+          {q.type === 'textarea' && (
+            <div className="space-y-4">
+              {q.chips && (
+                <div className="flex flex-wrap gap-2">
+                  {q.chips.map((chip) => (
+                    <button
+                      key={chip}
+                      onClick={() => addChip(chip)}
+                      className={`px-3.5 py-2 text-[13px] border rounded-lg transition-all ${
+                        inputValue.includes(chip)
+                          ? 'border-[#0d0d0d] bg-[#0d0d0d] text-white'
+                          : 'border-[#e5e5e5] text-[#888] hover:border-[#999] hover:text-[#555]'
+                      }`}
+                    >
+                      {chip}
+                    </button>
+                  ))}
                 </div>
               )}
-
-              <div ref={chatEndRef} />
+              <div className="relative">
+                <textarea
+                  ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={q.placeholder}
+                  rows={3}
+                  className="w-full border border-[#ebebeb] focus:border-[#0d0d0d] rounded-xl px-5 py-4 text-[16px] text-[#0d0d0d] placeholder-[#ccc] outline-none transition-colors resize-none"
+                />
+              </div>
+              {inputValue.trim() && (
+                <button
+                  onClick={() => next(inputValue.trim())}
+                  className="px-6 py-3 bg-[#0d0d0d] text-white rounded-xl text-[15px] font-medium hover:bg-[#333] transition-colors"
+                >
+                  Continue
+                </button>
+              )}
             </div>
-          </div>
-        )}
-      </main>
+          )}
 
-      {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 flex items-center justify-center py-3 text-[11px] text-white/15 bg-gradient-to-t from-black via-black to-transparent pointer-events-none">
-        axiom · ai implementation intelligence
-      </footer>
+          {/* Keyboard hint */}
+          {(q.type === 'text' || q.type === 'textarea') && (
+            <p className="text-[12px] text-[#ccc] mt-4">Press Enter ↵ to continue</p>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
