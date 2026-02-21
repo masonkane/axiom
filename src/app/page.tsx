@@ -73,7 +73,13 @@ export default function Home() {
     setAnswers(p => ({ ...p, [q.id]: v }));
     setVal('');
     setMulti([]);
-    if (step + 1 >= QS.length) setDone(true);
+    if (step + 1 >= QS.length) {
+      const final = { ...answers, [q.id]: v };
+      sessionStorage.setItem('axiom_answers', JSON.stringify(final));
+      setDone(true);
+      // Redirect to report after brief animation
+      setTimeout(() => { window.location.href = '/report'; }, 2500);
+    }
     else setStep(s => s + 1);
   }, [q, step]);
 
