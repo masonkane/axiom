@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Axiom — AI Implementation Intelligence",
+  title: "Groundwork — AI Implementation Intelligence",
   description: "Discover exactly how AI can transform your business. Custom implementation report in minutes, not months.",
   openGraph: {
-    title: "Axiom — AI Implementation Intelligence",
+    title: "Groundwork — AI Implementation Intelligence",
     description: "Discover exactly how AI can transform your business.",
     type: "website",
   },

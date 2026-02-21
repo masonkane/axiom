@@ -75,7 +75,7 @@ export default function Home() {
     setMulti([]);
     if (step + 1 >= QS.length) {
       const final = { ...answers, [q.id]: v };
-      sessionStorage.setItem('axiom_answers', JSON.stringify(final));
+      sessionStorage.setItem('groundwork_answers', JSON.stringify(final));
       setDone(true);
       // Redirect to report after brief animation
       setTimeout(() => { window.location.href = '/report'; }, 2500);
@@ -111,7 +111,7 @@ export default function Home() {
           <div className="w-8 h-8 bg-[var(--fg)] rounded-lg flex items-center justify-center" style={{ boxShadow: 'var(--shadow-sm)' }}>
             <span className="text-white text-[12px] font-bold font-display">A</span>
           </div>
-          <span className="text-[15px] font-semibold tracking-[-0.01em]">axiom</span>
+          <span className="text-[15px] font-semibold tracking-[-0.01em]">groundwork</span>
         </div>
       </nav>
 
@@ -236,7 +236,7 @@ export default function Home() {
             <div className="w-6 h-6 bg-[var(--fg)] rounded-md flex items-center justify-center">
               <span className="text-white text-[9px] font-bold font-display">A</span>
             </div>
-            <span className="text-[13px] font-semibold tracking-[-0.01em]">axiom</span>
+            <span className="text-[13px] font-semibold tracking-[-0.01em]">groundwork</span>
           </div>
         </div>
         <span className="text-[13px] text-[var(--fg-ghost)] tabular-nums">{step + 1} / {QS.length}</span>

@@ -39,7 +39,7 @@ export default function ReportPage() {
 
   useEffect(() => {
     // Get answers from sessionStorage (set by questionnaire on completion)
-    const stored = sessionStorage.getItem('axiom_answers');
+    const stored = sessionStorage.getItem('groundwork_answers');
     if (!stored) {
       setError('No questionnaire data found. Please complete the questionnaire first.');
       setLoading(false);
@@ -102,7 +102,7 @@ export default function ReportPage() {
           <div className="w-8 h-8 bg-[var(--fg)] rounded-lg flex items-center justify-center">
             <span className="text-white text-[12px] font-bold font-display">A</span>
           </div>
-          <span className="text-[15px] font-semibold tracking-[-0.01em]">axiom</span>
+          <span className="text-[15px] font-semibold tracking-[-0.01em]">groundwork</span>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -135,10 +135,10 @@ export default function ReportPage() {
             Get a detailed implementation plan with hands-on support from our AI consultants.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a href="mailto:josh@axiom.ai?subject=Implementation%20Plan%20-%20${encodeURIComponent(business)}" className="px-6 py-3 bg-[var(--fg)] text-white rounded-xl text-[14px] font-medium hover:shadow-[var(--shadow-md)] transition-all">
+            <a href="mailto:josh@groundwork.ai?subject=Implementation%20Plan%20-%20${encodeURIComponent(business)}" className="px-6 py-3 bg-[var(--fg)] text-white rounded-xl text-[14px] font-medium hover:shadow-[var(--shadow-md)] transition-all">
               Get implementation plan — $299
             </a>
-            <a href="mailto:josh@axiom.ai?subject=Managed%20Implementation%20-%20${encodeURIComponent(business)}" className="px-6 py-3 border border-[var(--border)] rounded-xl text-[14px] font-medium text-[var(--fg-secondary)] hover:bg-white hover:shadow-[var(--shadow-xs)] transition-all">
+            <a href="mailto:josh@groundwork.ai?subject=Managed%20Implementation%20-%20${encodeURIComponent(business)}" className="px-6 py-3 border border-[var(--border)] rounded-xl text-[14px] font-medium text-[var(--fg-secondary)] hover:bg-white hover:shadow-[var(--shadow-xs)] transition-all">
               Managed service — $4,999/mo
             </a>
           </div>
